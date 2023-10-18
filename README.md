@@ -1,4 +1,4 @@
-# WiFi-Ushape: U-shape Deep Networks are Efficient Backbones for Human Activity Understanding from Wi-Fi Signals
+# U-Shape Networks are Unified Backbones for Human Action Understanding from Wi-Fi Signals
 
 ## Prerequisite
 * numpy
@@ -9,7 +9,7 @@
 * scikit-learn
 
 ## How to run
-0. Download the dataset ARIL from[Joint Activity Recognition and Indoor Localization With WiFi Fingerprints](https://ieeexplore.ieee.org/abstract/document/8740950).
+0. Download the dataset ARIL from [Joint Activity Recognition and Indoor Localization With WiFi Fingerprints](https://ieeexplore.ieee.org/abstract/document/8740950).
    
    Download the dataset WiAR from [here](https://github.com/ermongroup/Wifi_Activity_Recognition).
    
@@ -22,3 +22,15 @@
    3. python3 traintestsplit.py xxx  (xxx is an int type, indicating the round of random division)
       
 4. Run bash run.sh
+
+
+## Citation
+If this helps your research, please cite our [paper](https://ieeexplore.ieee.org/document/10286020).
+
+    @article{wang2023wifiushape,
+     title={U-Shape Networks are Unified Backbones for Human Action Understanding from Wi-Fi Signals},
+     author={Wang, Fei and Gao, Yiao and Lan, Bo and Ding, Han and Shi, Jingang and Han, Jinsong},
+     journal={IEEE Internet of Things Journal},
+     year={2023},
+     publisher={IEEE}
+   }
