@@ -9,9 +9,9 @@
 * scikit-learn
 
 ## How to run
-0. Download the dataset ARIL from [Joint Activity Recognition and Indoor Localization With WiFi Fingerprints](https://ieeexplore.ieee.org/abstract/document/8740950).
+0. Download the dataset ARIL from [its project](https://github.com/geekfeiw/apl).
    
-   Download the dataset WiAR from [here](https://github.com/ermongroup/Wifi_Activity_Recognition).
+   Download the dataset WiAR from [its project](https://github.com/ermongroup/Wifi_Activity_Recognition).
    
    Download the dataset HTHI from [here](https://drive.google.com/file/d/1R79ciMFIr_6GgwnJeP3EzJokiWu80hun/view?usp=sharing)
 2. "git clone" this repository.
