@@ -5,12 +5,12 @@ from models.unetpp import UNetPP
 from models.fcn import FCN
 from models.unet import UNet
 
-from heads import Classify_Head, Detection_Head, Segment_Head
+from heads import Classify_Head, Detection_Head, Segment_Head, Detection_Head_Gaussian
 
 
 
 class WholeNet(nn.Module):
-    def __init__(self, model_name, in_channel, num_class, unet_depth, unetpp_depth, task):
+    def __init__(self, model_name, in_channel, num_class, unet_depth, unetpp_depth, task, detection_gaussian):
         super(WholeNet, self).__init__()
         self.task = task
 
@@ -25,8 +25,12 @@ class WholeNet(nn.Module):
 
 
         self.classifyhead = Classify_Head(in_channel=64, num_classes=num_class)
-        self.locationhead = Detection_Head()
+        if detection_gaussian:
+            self.locationhead = Detection_Head_Gaussian()
+        else:
+            self.locationhead = Detection_Head()
         self.frameclassifyhead = Segment_Head(in_channel=64, num_classes=num_class)
+
 
 
         self.L = unetpp_depth

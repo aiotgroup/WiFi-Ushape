@@ -21,7 +21,7 @@
    2. python3 dataset_load.py
    3. python3 traintestsplit.py xxx  (xxx is an int type, indicating the round of random division)
       
-4. Run bash run.sh
+4. Run bash run.sh (If you want to run Gaussian mode detection, please 'bash run_detection_gaussian.sh')
 
 
 ## Citation
