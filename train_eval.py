@@ -37,6 +37,7 @@ def get_args():
                         help='train dataset path')
     parser.add_argument('--test_dataset_path', type=str,
                         help='test dataset path')
+    parser.add_argument('--detection_guassian', type=bool, default=False)
     args = parser.parse_args()
 
     return args
@@ -68,7 +69,9 @@ lr = args.lr
 task = args.task
 filename = args.train_dataset_path
 testfilename = args.test_dataset_path
+detection_gaussian = args.detection_guassian
 sample_rate = None
+
 if args.dataset_name == 'ARIL':
     sample_rate = 60
 elif args.dataset_name == 'WiAR':
@@ -77,9 +80,9 @@ else:
     sample_rate = 160
 
 
-def model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_depth, task):
+def model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_depth, task, detection_guassian):
     model = WholeNet(model_name=model_name, in_channel=in_channel, num_class=num_class, unet_depth=unet_depth,
-                     unetpp_depth=unetpp_depth, task=task).to(device)
+                     unetpp_depth=unetpp_depth, task=task, detection_guassian=detection_guassian).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = None
 
@@ -96,8 +99,8 @@ def model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_d
 
 
 # loading data
-dataset = getdataloader(dataset_name=args.dataset_name, filepath=filename, batch_size=batch_size, trainortest='train')
-testdataset = getdataloader(dataset_name=args.dataset_name, filepath=testfilename, batch_size=1, trainortest='test', shuffle=False)
+dataset = getdataloader(dataset_name=args.dataset_name, filepath=filename, batch_size=batch_size, trainortest='train', detection_gaussian=detection_gaussian)
+testdataset = getdataloader(dataset_name=args.dataset_name, filepath=testfilename, batch_size=1, trainortest='test', shuffle=False, detection_gaussian=detection_gaussian)
 
 # model, optimizer, loss_function
 model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_depth, task)
@@ -108,6 +111,7 @@ model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, in_channel, num_cla
 classify_max_result = 0
 classify_matrix = None
 detection_min_mae = 1
+detection_min_error = 100
 segment_max_result = 0
 amp, label, detection_label, segment_label = None, None, None, None
 
@@ -229,16 +233,33 @@ for _ in range(epoches):
             Mae_sum += cal_MAE(out, detection_label)
             test_count += 1
 
-        print("Test: F is %.3f" % (F_sum / test_count))
-        print("Test: MAE is %.3f" % (Mae_sum / test_count))
+        mean_start_error = sum(start_errors) / test_count
+        mean_end_error = sum(end_errors) / test_count
 
-        if round(float((Mae_sum / test_count)), 3) < detection_min_mae:
-            detection_min_mae = round(float((Mae_sum / test_count)), 3)
-            torch.save(model.state_dict(), "{}_{}_{}.pth".format(task, args.dataset_name, model_name))
-            with open('{}_{}_starterror.data'.format(args.dataset_name, model_name), 'wb') as f:
+        print(mean_start_error + mean_end_error)
+        if mean_start_error + mean_end_error < detection_min_error:
+            detection_min_error = mean_start_error + mean_end_error
+            torch.save(model.state_dict(),
+                       "{}/{}_{}_{}_{}.pth".format(model_name, task, args.dataset_name, args.index, model_name))
+            with open('{}/{}_{}_{}_starterror.data'.format(model_name, args.dataset_name, args.index, model_name),
+                      'wb') as f:
                 pickle.dump(start_errors, f)
-            with open('{}_{}_enderror.data'.format(args.dataset_name, model_name), 'wb') as f:
+            with open('{}/{}_{}_{}_enderror.data'.format(model_name, args.dataset_name, args.index, model_name),
+                      'wb') as f:
                 pickle.dump(end_errors, f)
+
+
+
+        # print("Test: F is %.3f" % (F_sum / test_count))
+        # print("Test: MAE is %.3f" % (Mae_sum / test_count))
+        #
+        # if round(float((Mae_sum / test_count)), 3) < detection_min_mae:
+        #     detection_min_mae = round(float((Mae_sum / test_count)), 3)
+        #     torch.save(model.state_dict(), "{}_{}_{}.pth".format(task, args.dataset_name, model_name))
+        #     with open('{}_{}_starterror.data'.format(args.dataset_name, model_name), 'wb') as f:
+        #         pickle.dump(start_errors, f)
+        #     with open('{}_{}_enderror.data'.format(args.dataset_name, model_name), 'wb') as f:
+        #         pickle.dump(end_errors, f)
 
     if task == 'segment':
         print("Train: %d epoch's acc is %.3f" % (_ + 1, 100 * (correct_sum / len(dataset.dataset))), "%")

@@ -43,6 +43,28 @@ class Detection_Head(nn.Module):
         location_output = outputs.mean(dim=1)
         return location_output
 
+
+class Detection_Head_Gaussian(nn.Module):
+    def __init__(self, in_channel):
+        super(Detection_Head, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv1d(in_channels=in_channel, out_channels=2, kernel_size=1),
+            nn.ReLU(),
+            nn.BatchNorm1d(num_features=2)
+        )
+
+    def forward(self, datas):
+        outputs = 0
+        if isinstance(datas, tuple):
+            for data in datas:
+                outputs += data
+            outputs = outputs / len(datas)
+        else:
+            outputs = datas
+
+        outputs = self.conv(outputs)
+        return outputs
+
 class Segment_Head(nn.Module):
     def __init__(self, in_channel, num_classes):
         super(Segment_Head, self).__init__()

@@ -107,3 +107,14 @@ def detection_start_end(out, detection_label, sample_rate):
         end_error = np.abs(label_end - prediction_end) / sample_rate
 
     return start_error, end_error
+
+def start_end_gaussian(pred, gt, sample_rate):
+    start_pred = np.argmax(pred[0, 0, :])
+    end_pred = np.argmax(pred[0, 1, :])
+    start_gt = np.argmax(gt[0, 0, :])
+    end_gt = np.argmax(gt[0, 1, :])
+
+    start_error = np.abs(start_pred - start_gt) / sample_rate
+    end_error = np.abs(end_pred - end_gt) / sample_rate
+
+    return start_error, end_error
