@@ -10,9 +10,20 @@ Moreover, the action may take place multiple (m) times, n this situation, we fir
 $$
 h s(t)=\max _{i=1,2, \ldots, m} h s\left(t ; t_{s}^{i}\right)
 $$
-<img src="gaussian_label_multi-action.png" alt="gaussian_label_multi-action" style="zoom:50%;" />
+<img src="gaussian_label_multi-action_0.png" alt="gaussian_label_multi-action" style="zoom:50%;" />
 
 we take the maximum of the heatmaps to fuse.
+
+```python
+# --------- test label ----------------------------------------
+test_label_len = 300
+test_label = np.array([[100, 110], [120, 200]])
+
+# --------- get gaussian label --------------------------------
+gaussian_label = label_encoding_gaussian(test_label, test_label_len)
+```
+
+
 
 
 

@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     # --------- test label ----------------------------------------
     test_label_len = 300
-    test_label = np.array([[100, 200], [120, 250]])
+    test_label = np.array([[100, 110], [120, 200]])
 
     # --------- get gaussian label --------------------------------
     gaussian_label = label_encoding_gaussian(test_label, test_label_len)
