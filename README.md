@@ -10,18 +10,36 @@
 
 ## How to run
 0. Download the dataset ARIL from [its project](https://github.com/geekfeiw/apl).
-   
-   Download the dataset WiAR from [its project](https://github.com/ermongroup/Wifi_Activity_Recognition).
-   
-   Download the dataset HTHI from [here](https://drive.google.com/file/d/1R79ciMFIr_6GgwnJeP3EzJokiWu80hun/view?usp=sharing)
-2. "git clone" this repository.
-   
-3. Datasets ARIL and HTHI do not require processing. Datasets ARIL and HTHI do not require processing，
-   1. cd create_wiar_dataset
-   2. python3 dataset_load.py
-   3. python3 traintestsplit.py xxx  (xxx is an int type, indicating the round of random division)
-      
-4. Run bash run.sh (If you want to run Gaussian mode detection, please 'bash run_detection_gaussian.sh')
+
+    Download the dataset WiAR from [its project](https://github.com/ermongroup/Wifi_Activity_Recognition).
+
+    Download the dataset HTHI from [here](https://drive.google.com/file/d/1R79ciMFIr_6GgwnJeP3EzJokiWu80hun/view?usp=sharing)
+
+1. "git clone" this repository.
+
+2. Datasets ARIL and HTHI do not require processing. Datasets ARIL and HTHI do not require processing，
+   1. unzip WiAR dataset and `cd create_wiar_dataset`
+   2. run `python load_data.py` to get `csi_amp_all.mat`
+   3. run `python traintestsplit.py <index>`  (`index` is an int type, indicating the round of random division)
+   4. get `TestDataset1.mat` and `TrainDataset1.mat`
+
+3. Run bash run.sh (If you want to run Gaussian mode detection, please 'bash run_detection_gaussian.sh')
+
+### Input Parameters:
+
+```python
+python train_eval.py --model_name <model_name> --task <task> --dataset_name <dataset_name>
+```
+
+- `--model_name`: choose between `unet`, `unetpp` and `fcn`
+- `--task`: choose between `classify`, `detection`, and `segment`
+- `--dataset_name`: choose between `HTHI`, `WiAR` and `ARIL`
+
+Please note that when the `dataset_name` is set to `HTHI`, the `task` parameter can only be set to `detection`.
+
+## gaussian smooth label
+
+`run gaussian_smooth_label.py `
 
 
 ## Citation
@@ -34,4 +52,4 @@ If this helps your research, please cite our [paper](https://ieeexplore.ieee.org
      year={2023},
      publisher={IEEE}
      }
-   
+

@@ -69,6 +69,7 @@ class FCN(nn.Module):
         )
 
     def forward(self, x):
+        input_len = x.shape[2]
         x = self.stage1(x)
         x = self.stage2(x)
         x = self.stage3(x)
@@ -89,4 +90,6 @@ class FCN(nn.Module):
         output = self.upsample_81(x)
         output = self.upsample_82(output)
         output = self.final(output)
+        if output.shape[2] != input_len:
+            output = F.interpolate(output, input_len, mode='linear', align_corners=True)
         return output

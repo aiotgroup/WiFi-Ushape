@@ -4,9 +4,9 @@ import scipy.io as scio
 import sys
 
 
-dataset = scio.loadmat('amp_csi.mat')
-datas = dataset['Amp']
-labels = dataset['label']
+dataset = scio.loadmat('csi_amp_all.mat')
+datas = dataset['csi_amp']
+labels = dataset['label'][0]
 salient_labels = dataset['salient_label']
 segment_labels = dataset['segment_label']
 

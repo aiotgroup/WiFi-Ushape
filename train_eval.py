@@ -16,28 +16,32 @@ from sklearn.metrics import confusion_matrix
 
 from functions import onehot, onehot_first0, segment_onehot, segmentonehot_negone, \
     cal_segment_acc, cal_F, cal_MAE, cal_acc, detection_start_end
-from config import in_channel, unet_depth, unetpp_depth, num_class, segment_class
+from Config import Config
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', type=str)
-    parser.add_argument('--device_id', type=int, default=2)
-    parser.add_argument('--epoches', type=int, default=1000)
-    parser.add_argument('--batch_size', type=int, default=10,
+    parser.add_argument('--model_name', type=str, default='fcn',
+                        help='{unet} / {unetpp} / {fcn}')
+    parser.add_argument('--device_id', type=int, default=0)
+    parser.add_argument('--epoches', type=int, default=100)
+    parser.add_argument('--batch_size', type=int, default=16,
                         help='training batch size')
-    parser.add_argument('--lr', type=float, default=5e-4,
+    parser.add_argument('--lr', type=float, default=5e-5,
                         help='learning rate')
     parser.add_argument('--decay_epoch', type=list, default=[],
                         help='every n epochs decay learning rate')
-    parser.add_argument('--task', type=str, default='classify',
-                        help='choose target of this task')
-    parser.add_argument('--dataset_name', type=str, default=['ARIL'])
-    parser.add_argument('--train_dataset_path', type=str,
+    parser.add_argument('--task', type=str, default='segment',
+                        help='choose target of this task: {classify} / {detection} / {segment}')
+
+    parser.add_argument('--dataset_name', type=str, default='WiAR',
+                        help='{HTHI} / {WiAR} / {ARIL}')
+    parser.add_argument('--train_dataset_path', type=str, default='create_wiar_dataset/TrainDataset1.mat',
                         help='train dataset path')
-    parser.add_argument('--test_dataset_path', type=str,
+    parser.add_argument('--test_dataset_path', type=str, default='create_wiar_dataset/TestDataset1.mat',
                         help='test dataset path')
-    parser.add_argument('--detection_gaussian', type=str, default="No")
+
+    parser.add_argument('--detection_gaussian', type=bool, default=False)
     args = parser.parse_args()
 
     return args
@@ -70,14 +74,9 @@ task = args.task
 filename = args.train_dataset_path
 testfilename = args.test_dataset_path
 detection_gaussian = args.detection_gaussian
-sample_rate = None
 
-if args.dataset_name == 'ARIL':
-    sample_rate = 60
-elif args.dataset_name == 'WiAR':
-    sample_rate = 100
-else:
-    sample_rate = 160
+config = Config(dataset_name=args.dataset_name)
+
 
 
 def model_opt_lossfn(model_name, lr, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian):
@@ -103,7 +102,7 @@ dataset = getdataloader(dataset_name=args.dataset_name, filepath=filename, batch
 testdataset = getdataloader(dataset_name=args.dataset_name, filepath=testfilename, batch_size=1, trainortest='test', shuffle=False, detection_gaussian=detection_gaussian)
 
 # model, optimizer, loss_function
-model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian=detection_gaussian)
+model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, config.in_channel, config.num_class, config.segment_class, config.unet_depth, config.unetpp_depth, task, detection_gaussian=detection_gaussian)
 
 
 # training, testing/evaluating
@@ -139,16 +138,16 @@ for _ in range(epoches):
             amp, pha, label, segment_label, detection_label, time = data
             amp = amp.to(device)
             pha = pha.to(device)
-            label = onehot(batch_size, num_class, label).to(device)
-            segment_label = segment_onehot(segment_label, segment_class).to(device)
+            label = onehot(batch_size, config.num_class, label).to(device)
+            segment_label = segment_onehot(segment_label, config.segment_class).to(device)
             detection_label = detection_label.to(device)
 
         elif args.dataset_name == 'WiAR':
             amp, label, detection_label, segment_label = data
             amp = amp.to(device)
-            label = onehot_first0(batch_size, num_class, label).to(device)
+            label = onehot_first0(batch_size, config.num_class, label).to(device)
             detection_label = detection_label.to(device)
-            segment_label = segmentonehot_negone(segment_label, segment_class).to(device)
+            segment_label = segmentonehot_negone(segment_label, config.segment_class).to(device)
 
         else:
             amp, detection_label, cla = data
@@ -186,11 +185,11 @@ for _ in range(epoches):
             if args.dataset_name == 'ARIL':
                 amp, pha, label, segment_label, detection_label, time = testdata
                 amp = amp.to(device)
-                label = onehot(1, num_class, label).to(device)
+                label = onehot(1, config.num_class, label).to(device)
             elif args.dataset_name == 'WiAR':
                 amp, label, detection_label, segment_label = testdata
                 amp = amp.to(device)
-                label = onehot_first0(1, num_class, label).to(device)
+                label = onehot_first0(1, config.num_class, label).to(device)
             else:
                 raise ValueError("There are no classify tasks in the dataset")
 
@@ -233,7 +232,7 @@ for _ in range(epoches):
                 detection_label = detection_label.to(device)
 
             out = model(amp)
-            start_error, end_error = detection_start_end(out, detection_label, sample_rate)
+            start_error, end_error = detection_start_end(out, detection_label, config.sample_rate)
             start_errors.append(start_error)
             end_errors.append(end_error)
             # F_sum += cal_F(out, detection_label)
@@ -278,7 +277,7 @@ for _ in range(epoches):
             if args.dataset_name == 'ARIL':
                 amp, pha, label, segment_label, detection_label, time = testdata
                 amp = amp.to(device)
-                segment_label = segment_onehot(segment_label, num_class).to(device)
+                segment_label = segment_onehot(segment_label, config.num_class).to(device)
             elif args.dataset_name == 'WiAR':
                 amp, label, detection_label, segment_label = testdata
                 amp = amp.to(device)
