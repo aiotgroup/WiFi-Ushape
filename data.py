@@ -18,20 +18,19 @@ def getdataloader(dataset_name, filepath, batch_size, trainortest, shuffle=True,
     dataset = None
     if dataset_name not in ['ARIL', 'WiAR', 'HTHI']:
         raise ValueError("Dataset name error, expected to enter WiAR, ARIL, or HTHI")
-
     if dataset_name == 'ARIL':
-        if detection_gaussian:
+        if detection_gaussian == "Yes":
             dataset = ARILDataGaussian(filepath, trainortest)
         else:
             dataset = ARILData(filepath, trainortest)
 
     elif dataset_name == 'WiAR':
-        if detection_gaussian:
+        if detection_gaussian == "Yes":
             dataset = WiARDataGaussian(filepath, trainortest)
         else:
             dataset = WiARData(filepath, trainortest)
     else:
-        if detection_gaussian:
+        if detection_gaussian == "Yes":
             dataset = HTHIDataGaussian(filepath, trainortest)
         else:
             dataset = HTHIData(filepath, trainortest)

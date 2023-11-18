@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class ConvBlock(nn.Module):
@@ -75,6 +76,8 @@ class UNet(nn.Module):
         out_end = None
         for i in range(length):
             deout = self.deconvs[i](deinput)
+            if deout.shape[2] != outputs[len(outputs)-2-i].shape[2]:
+                deout = F.interpolate(deout, outputs[len(outputs)-2-i].shape[2], mode='linear', align_corners=True)
             out_concat = torch.cat((deout, outputs[len(outputs)-2-i]), dim=1)
             out_end = self.demodel[i](out_concat)
             deinput = out_end

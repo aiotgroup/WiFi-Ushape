@@ -1,5 +1,10 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+def Unit_len(source, target):
+    source = F.interpolate(source, target.shape[2], mode='linear', align_corners=True)
+    return source
 
 class FCN(nn.Module):
     def __init__(self, in_channel, dim):
@@ -68,11 +73,18 @@ class FCN(nn.Module):
         x = self.stage2(x)
         x = self.stage3(x)
         pool3 = x
+
         x = self.stage4(x)
         pool4 = self.upsample_2(x)
-
+        if pool4.shape[2] != pool3.shape[2]:
+            pool4 = Unit_len(pool4, pool3)
+        
         x = self.stage5(x)
         conv7 = self.upsample_4(x)
+        if conv7.shape[2] != pool4.shape[2]:
+            conv7 = Unit_len(conv7, pool4)
+            
+
         x = torch.cat([pool3, pool4, conv7], dim=1)
         output = self.upsample_81(x)
         output = self.upsample_82(output)

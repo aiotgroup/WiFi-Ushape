@@ -10,7 +10,7 @@ from heads import Classify_Head, Detection_Head, Segment_Head, Detection_Head_Ga
 
 
 class WholeNet(nn.Module):
-    def __init__(self, model_name, in_channel, num_class, unet_depth, unetpp_depth, task, detection_gaussian):
+    def __init__(self, model_name, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian):
         super(WholeNet, self).__init__()
         self.task = task
 
@@ -25,11 +25,11 @@ class WholeNet(nn.Module):
 
 
         self.classifyhead = Classify_Head(in_channel=64, num_classes=num_class)
-        if detection_gaussian:
-            self.locationhead = Detection_Head_Gaussian()
+        if detection_gaussian == "Yes":
+            self.locationhead = Detection_Head_Gaussian(64)
         else:
             self.locationhead = Detection_Head()
-        self.frameclassifyhead = Segment_Head(in_channel=64, num_classes=num_class)
+        self.frameclassifyhead = Segment_Head(in_channel=64, num_classes=segment_class)
 
 
 

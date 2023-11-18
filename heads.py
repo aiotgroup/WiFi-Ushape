@@ -46,7 +46,7 @@ class Detection_Head(nn.Module):
 
 class Detection_Head_Gaussian(nn.Module):
     def __init__(self, in_channel):
-        super(Detection_Head, self).__init__()
+        super(Detection_Head_Gaussian, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv1d(in_channels=in_channel, out_channels=2, kernel_size=1),
             nn.ReLU(),

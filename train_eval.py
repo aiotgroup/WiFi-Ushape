@@ -16,7 +16,7 @@ from sklearn.metrics import confusion_matrix
 
 from functions import onehot, onehot_first0, segment_onehot, segmentonehot_negone, \
     cal_segment_acc, cal_F, cal_MAE, cal_acc, detection_start_end
-from config import in_channel, unet_depth, unetpp_depth, num_class
+from config import in_channel, unet_depth, unetpp_depth, num_class, segment_class
 
 
 def get_args():
@@ -37,7 +37,7 @@ def get_args():
                         help='train dataset path')
     parser.add_argument('--test_dataset_path', type=str,
                         help='test dataset path')
-    parser.add_argument('--detection_guassian', type=bool, default=False)
+    parser.add_argument('--detection_gaussian', type=str, default="No")
     args = parser.parse_args()
 
     return args
@@ -69,7 +69,7 @@ lr = args.lr
 task = args.task
 filename = args.train_dataset_path
 testfilename = args.test_dataset_path
-detection_gaussian = args.detection_guassian
+detection_gaussian = args.detection_gaussian
 sample_rate = None
 
 if args.dataset_name == 'ARIL':
@@ -80,9 +80,9 @@ else:
     sample_rate = 160
 
 
-def model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_depth, task, detection_guassian):
-    model = WholeNet(model_name=model_name, in_channel=in_channel, num_class=num_class, unet_depth=unet_depth,
-                     unetpp_depth=unetpp_depth, task=task, detection_guassian=detection_guassian).to(device)
+def model_opt_lossfn(model_name, lr, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian):
+    model = WholeNet(model_name=model_name, in_channel=in_channel, num_class=num_class, segment_class=segment_class, unet_depth=unet_depth,
+                     unetpp_depth=unetpp_depth, task=task, detection_gaussian=detection_gaussian).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = None
 
@@ -103,7 +103,7 @@ dataset = getdataloader(dataset_name=args.dataset_name, filepath=filename, batch
 testdataset = getdataloader(dataset_name=args.dataset_name, filepath=testfilename, batch_size=1, trainortest='test', shuffle=False, detection_gaussian=detection_gaussian)
 
 # model, optimizer, loss_function
-model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_depth, task)
+model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian=detection_gaussian)
 
 
 # training, testing/evaluating
@@ -114,6 +114,13 @@ detection_min_mae = 1
 detection_min_error = 100
 segment_max_result = 0
 amp, label, detection_label, segment_label = None, None, None, None
+
+if not os.path.exists("outputs/{}".format(task)):
+    os.makedirs("outputs/{}".format(task))
+
+if args.dataset_name == "HTHI" and (args.task == 'classify' or args.task == "segment"):
+    raise ValueError("This dataset HTHI does not have a classify task and segment task")
+
 
 for _ in range(epoches):
     loss_sum = 0
@@ -133,7 +140,7 @@ for _ in range(epoches):
             amp = amp.to(device)
             pha = pha.to(device)
             label = onehot(batch_size, num_class, label).to(device)
-            segment_label = segment_onehot(segment_label, num_class).to(device)
+            segment_label = segment_onehot(segment_label, segment_class).to(device)
             detection_label = detection_label.to(device)
 
         elif args.dataset_name == 'WiAR':
@@ -141,12 +148,12 @@ for _ in range(epoches):
             amp = amp.to(device)
             label = onehot_first0(batch_size, num_class, label).to(device)
             detection_label = detection_label.to(device)
-            segment_label = segmentonehot_negone(segment_label, 8).to(device)
+            segment_label = segmentonehot_negone(segment_label, segment_class).to(device)
 
         else:
             amp, detection_label, cla = data
             amp = amp.to(device)
-            detection_label = label.to(device)
+            detection_label = detection_label.to(device)
 
         out = model(amp)
 
@@ -199,9 +206,9 @@ for _ in range(epoches):
         if 100 * (test_correct / test_count) > classify_max_result:
             classify_max_result = 100 * (test_correct / test_count)
             classify_matrix = confusion_matrix(gt, pred, labels=[1, 2, 3, 4, 5, 6])
-            np.save('{}_{}_matrix.npy'.format(args.dataset_name, args.model_name), classify_matrix)
+            np.save('outputs/{}/{}_{}_matrix.npy'.format(task, args.dataset_name, args.model_name), classify_matrix)
 
-            torch.save(model.state_dict(), "{}_{}_{}.pth".format(task, args.dataset_name, model_name))
+            torch.save(model.state_dict(), "outputs/{}/{}_{}.pth".format(task, args.dataset_name, model_name))
 
     if task == 'detection':
         F_sum = 0
@@ -223,14 +230,14 @@ for _ in range(epoches):
             else:
                 amp, detection_label, cla = data
                 amp = amp.to(device)
-                detection_label = label.to(device)
+                detection_label = detection_label.to(device)
 
             out = model(amp)
             start_error, end_error = detection_start_end(out, detection_label, sample_rate)
             start_errors.append(start_error)
             end_errors.append(end_error)
-            F_sum += cal_F(out, detection_label)
-            Mae_sum += cal_MAE(out, detection_label)
+            # F_sum += cal_F(out, detection_label)
+            # Mae_sum += cal_MAE(out, detection_label)
             test_count += 1
 
         mean_start_error = sum(start_errors) / test_count
@@ -240,11 +247,11 @@ for _ in range(epoches):
         if mean_start_error + mean_end_error < detection_min_error:
             detection_min_error = mean_start_error + mean_end_error
             torch.save(model.state_dict(),
-                       "{}/{}_{}_{}_{}.pth".format(model_name, task, args.dataset_name, args.index, model_name))
-            with open('{}/{}_{}_{}_starterror.data'.format(model_name, args.dataset_name, args.index, model_name),
+                       "outputs/{}/{}_{}.pth".format(task, args.dataset_name, model_name))
+            with open('outputs/{}/{}_{}_starterror.data'.format(task, args.dataset_name, model_name),
                       'wb') as f:
                 pickle.dump(start_errors, f)
-            with open('{}/{}_{}_{}_enderror.data'.format(model_name, args.dataset_name, args.index, model_name),
+            with open('outputs/{}/{}_{}_enderror.data'.format(task, args.dataset_name, model_name),
                       'wb') as f:
                 pickle.dump(end_errors, f)
 
@@ -272,7 +279,7 @@ for _ in range(epoches):
                 amp, pha, label, segment_label, detection_label, time = testdata
                 amp = amp.to(device)
                 segment_label = segment_onehot(segment_label, num_class).to(device)
-            elif args.dataset_name == '':
+            elif args.dataset_name == 'WiAR':
                 amp, label, detection_label, segment_label = testdata
                 amp = amp.to(device)
                 segment_label = segmentonehot_negone(segment_label, 8).to(device)
@@ -300,8 +307,8 @@ for _ in range(epoches):
         print("Segment --> Test: %d epoche's acc is %.3f" % (_ + 1, 100 * (sum(accs) / test_count)), "%")
         if 100 * sum(accs) / test_count > segment_max_result:
             segment_max_result = 100 * sum(accs) / test_count
-            torch.save(model.state_dict(), "{}_{}_{}.pth".format(task, args.dataset_name, model_name))
-            with open('{}_{}_segment_accs.data'.format(args.dataset_name, model_name), 'wb') as f:
+            torch.save(model.state_dict(), "outputs/{}/{}_{}.pth".format(task, args.dataset_name, model_name))
+            with open('outputs/{}/{}_{}_segment_accs.data'.format(task, args.dataset_name, model_name), 'wb') as f:
                 pickle.dump(accs, f)
 
     print("----------------------------------------------------------------")

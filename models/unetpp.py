@@ -46,9 +46,9 @@ class UNetPP(nn.Module):
     def __init__(self, in_channels, deep_supervision=True):
         super().__init__()
         self.deep_supervision = deep_supervision
-        # filters = [64, 128, 256, 512, 1024, 2048]
+        filters = [64, 128, 256, 512, 1024, 2048]
         # filters = [256, 512, 1024, 1536, 2048, 2560]
-        filters = [128, 256, 512, 1024, 2048, 4096]
+        #filters = [128, 256, 512, 1024, 2048, 4096]
         self.x_00 = StandardUnit(in_channels=in_channels, out_channels=filters[0])
         self.pool0 = nn.MaxPool1d(kernel_size=2)
 

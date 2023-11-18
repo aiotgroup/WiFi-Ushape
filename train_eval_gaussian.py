@@ -15,7 +15,7 @@ import random
 
 
 from functions import start_end_gaussian
-from config import in_channel, unet_depth, unetpp_depth, num_class
+from config import in_channel, unet_depth, unetpp_depth, num_class, segment_class
 
 
 def get_args():
@@ -37,7 +37,7 @@ def get_args():
     parser.add_argument('--test_dataset_path', type=str,
                         help='test dataset path')
     parser.add_argument('--index', type=int)
-    parser.add_argument('--detection_guassian', type=bool, default=True)
+    parser.add_argument('--detection_gaussian', type=str, default="Yes")
     args = parser.parse_args()
 
     return args
@@ -67,7 +67,7 @@ batch_size = args.batch_size
 decay_epoch = args.decay_epoch
 lr = args.lr
 task = args.task
-detection_guassian = args.detection_gaussian
+detection_gaussian = args.detection_gaussian
 filename = args.train_dataset_path
 testfilename = args.test_dataset_path
 sample_rate = None
@@ -80,8 +80,8 @@ else:
     sample_rate = 160
 
 
-def model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_depth, task, detection_gaussian):
-    model = WholeNet(model_name=model_name, in_channel=in_channel, num_class=num_class, unet_depth=unet_depth,
+def model_opt_lossfn(model_name, lr, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian):
+    model = WholeNet(model_name=model_name, in_channel=in_channel, num_class=num_class, segment_class=segment_class, unet_depth=unet_depth,
                      unetpp_depth=unetpp_depth, task=task, detection_gaussian=detection_gaussian).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = nn.MSELoss(reduction='mean')
@@ -90,12 +90,12 @@ def model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_d
 
 
 # loading data
-dataset = getdataloader(dataset_name=args.dataset_name, filepath=filename, batch_size=batch_size, trainortest='train')
-testdataset = getdataloader(dataset_name=args.dataset_name, filepath=testfilename, batch_size=1, trainortest='test',
+dataset = getdataloader(dataset_name=args.dataset_name, filepath=filename, batch_size=batch_size, trainortest='train', detection_gaussian=detection_gaussian)
+testdataset = getdataloader(dataset_name=args.dataset_name, filepath=testfilename, batch_size=1, trainortest='test', detection_gaussian=detection_gaussian,
                             shuffle=False)
 
 # model, optimizer, loss_function
-model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, in_channel, num_class, unet_depth, unetpp_depth, task, detection_guassian)
+model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian=detection_gaussian)
 
 # training, testing/evaluating
 
@@ -104,6 +104,9 @@ classify_matrix = None
 detection_min_error = 100
 segment_max_result = 0
 amp, label, detection_label, segment_label = None, None, None, None
+
+if not os.path.exists("Detection_Gaussian/{}".format(args.model_name)):
+    os.makedirs("Detection_Gaussian/{}".format(args.model_name))
 
 for _ in range(epoches):
     loss_sum = 0
@@ -140,7 +143,6 @@ for _ in range(epoches):
             detection_label = detection_label.to(device)
 
         out = model(amp)
-
         loss = loss_fn(out, detection_label.squeeze())
 
         loss.backward()
@@ -191,10 +193,10 @@ for _ in range(epoches):
         detection_min_error = mean_start_error + mean_end_error
         torch.save(model.state_dict(),
                    "Detection_Gaussian/{}/{}_{}_{}.pth".format(model_name, args.dataset_name, args.index, model_name))
-        with open('{}/{}_{}_{}_starterror.data'.format(model_name, args.dataset_name, args.index, model_name),
+        with open('Detection_Gaussian/{}/{}_{}_{}_starterror.data'.format(model_name, args.dataset_name, args.index, model_name),
                   'wb') as f:
             pickle.dump(start_errors, f)
-        with open('{}/{}_{}_{}_enderror.data'.format(model_name, args.dataset_name, args.index, model_name),
+        with open('Detection_Gaussian/{}/{}_{}_{}_enderror.data'.format(model_name, args.dataset_name, args.index, model_name),
                   'wb') as f:
             pickle.dump(end_errors, f)
 
