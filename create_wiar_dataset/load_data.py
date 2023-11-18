@@ -159,4 +159,4 @@ if __name__ == '__main__':
         root_path
     """
     WiAR_root_path = 'Data'
-    main(r'D:\study\postgraduate\study_project\ushape\wifi_ushape_aiot\create_wiar_dataset\Data')
+    main(r'<data path>')
