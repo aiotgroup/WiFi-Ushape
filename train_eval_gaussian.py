@@ -33,11 +33,11 @@ def get_args():
     parser.add_argument('--task', type=str, default='detection',
                         help='choose target of this task: {classify} / {detection} / {segment}')
 
-    parser.add_argument('--dataset_name', type=str, default='ARIL',
+    parser.add_argument('--dataset_name', type=str, default='HTHI',
                         help='{HTHI} / {WiAR} / {ARIL}')
-    parser.add_argument('--train_dataset_path', type=str, default='process_label/TrainDataset_aril_gauss.mat',
+    parser.add_argument('--train_dataset_path', type=str, default='process_label/TrainDataset_hthi_gauss.mat',
                         help='train dataset path')
-    parser.add_argument('--test_dataset_path', type=str, default='process_label/TestDataset_aril_gauss.mat',
+    parser.add_argument('--test_dataset_path', type=str, default='process_label/TestDataset_hthi_gauss.mat',
                         help='test dataset path')
 
     parser.add_argument('--index', type=int, default=0)

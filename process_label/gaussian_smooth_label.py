@@ -48,6 +48,15 @@ def label_encoding_gaussian(detection_label: np.ndarray, label_len: int, sigma: 
 
     return gaussian_label
 
+def smooth_label(labels):
+    result = []
+    for i, label in enumerate(labels):
+        detection_label = get_detection_label(label)
+        smooth_label = label_encoding_gaussian(detection_label, len(label))
+        smooth_label = np.expand_dims(smooth_label, axis=0)
+        result.append(smooth_label)
+    result = np.concatenate(result, axis=0)
+    return result
 def draw_label(test_label, label_len, gaussian_label, sigma=None):
     """
     draw gaussian label
@@ -99,13 +108,12 @@ def draw_label(test_label, label_len, gaussian_label, sigma=None):
     plt.show()
 
 
-def get_detection_label(labels):
+def get_detection_label(label):
     detection_label = []
-    for i, label in enumerate(labels):
-        start_end = np.where(label > 0)[0]
-        start = start_end[0]
-        end = start_end[-1]
-        detection_label.append([start, end])
+    start_end = np.where(label > 0)[0]
+    start = start_end[0]
+    end = start_end[-1]
+    detection_label.append([start, end])
 
     return np.array(detection_label)
 
@@ -115,71 +123,64 @@ if __name__ == '__main__':
     """
         WiAR
     """
-    data = scio.loadmat(r'<root path>')
-    detection_label = get_detection_label(data['testSalientLabel'])
-    smooth_test_label = label_encoding_gaussian(detection_label, data['testSalientLabel'].shape[1])
-    # label_data = {
-    #     'amp': data['testAmp'],
-    #     'label': data['testSalientLabel'],
-    #     'smooth_label': smooth_test_label
-    # }
-    # scio.savemat(f'TestDataset_wiar_gauss.mat', label_data)
-    print(smooth_test_label.shape)
+    data = scio.loadmat(r'<data path>')
+    smooth_test_label = smooth_label(data['testSalientLabel'])
+    label_data = {
+        'amp': data['testAmp'],
+        'label': data['testSalientLabel'],
+        'smooth_label': smooth_test_label
+    }
+    scio.savemat(f'TestDataset_wiar_gauss.mat', label_data)
 
-    # data = scio.loadmat(r'<root path>')
-    # detection_label = get_detection_label(data['trainSalientLabel'])
-    # smooth_test_label = label_encoding_gaussian(detection_label, data['trainSalientLabel'].shape[1])
-    # label_data = {
-    #     'amp': data['trainAmp'],
-    #     'label': data['trainSalientLabel'],
-    #     'smooth_label': smooth_test_label
-    # }
-    # scio.savemat(f'TraintDataset_wiar_gauss.mat', label_data)
+    data = scio.loadmat(r'<data path>')
+    smooth_test_label = smooth_label(data['trainSalientLabel'])
+    label_data = {
+        'amp': data['trainAmp'],
+        'label': data['trainSalientLabel'],
+        'smooth_label': smooth_test_label
+    }
+    scio.savemat(f'TraintDataset_wiar_gauss.mat', label_data)
 
     """
         ARIL
     """
-    # train_data = scio.loadmat(r"<root path>")
-    # test_data = scio.loadmat(r'<root path>')
+    train_data = scio.loadmat(r"<data path>")
+    test_data = scio.loadmat(r'<data path>')
+
+    smooth_test_label = smooth_label(train_data['train_label_mask'])
+    label_data = {
+        'amp': train_data['train_data_amp'],
+        'label': train_data['train_label_mask'],
+        'smooth_label': smooth_test_label
+    }
+    scio.savemat(f'TrainDataset_aril_gauss.mat', label_data)
     #
-    # detection_label = get_detection_label(train_data['train_label_mask'])
-    # smooth_test_label = label_encoding_gaussian(detection_label, train_data['train_label_mask'].shape[1])
-    # label_data = {
-    #     'amp': train_data['train_data_amp'],
-    #     'label': train_data['train_label_mask'],
-    #     'smooth_label': smooth_test_label
-    # }
-    # scio.savemat(f'TrainDataset_aril_gauss.mat', label_data)
-    #
-    # detection_label = get_detection_label(test_data['test_label_mask'])
-    # smooth_test_label = label_encoding_gaussian(detection_label, test_data['test_label_mask'].shape[1])
-    # label_data = {
-    #     'amp': test_data['test_data_amp'],
-    #     'label': test_data['test_label_mask'],
-    #     'smooth_label': smooth_test_label
-    # }
-    # scio.savemat(f'TestDataset_aril_gauss.mat', label_data)
+    smooth_test_label = smooth_label(test_data['test_label_mask'])
+    label_data = {
+        'amp': test_data['test_data_amp'],
+        'label': test_data['test_label_mask'],
+        'smooth_label': smooth_test_label
+    }
+    scio.savemat(f'TestDataset_aril_gauss.mat', label_data)
 
     """
         HTHI
     """
-    # train_data = scio.loadmat(r"<root path>")
-    # test_data = scio.loadmat(r'<root path>')
-    #
-    # detection_label = get_detection_label(train_data['trainLabel'])
-    # smooth_test_label = label_encoding_gaussian(detection_label, train_data['trainLabel'].shape[1])
-    # label_data = {
-    #     'amp': train_data['trainAmp'],
-    #     'label': train_data['trainLabel'],
-    #     'smooth_label': smooth_test_label
-    # }
-    # scio.savemat(f'TrainDataset_hthi_gauss.mat', label_data)
-    #
-    # detection_label = get_detection_label(test_data['testLabel'])
-    # smooth_test_label = label_encoding_gaussian(detection_label, test_data['testLabel'].shape[1])
-    # label_data = {
-    #     'amp': test_data['testAmp'],
-    #     'label': test_data['testLabel'],
-    #     'smooth_label': smooth_test_label
-    # }
-    # scio.savemat(f'TestDataset_hthi_gauss.mat', label_data)
+    train_data = scio.loadmat(r"<data path>")
+    test_data = scio.loadmat(r'<data path>')
+
+    smooth_test_label = smooth_label(train_data['trainLabel'])
+    label_data = {
+        'amp': train_data['trainAmp'],
+        'label': train_data['trainLabel'],
+        'smooth_label': smooth_test_label
+    }
+    scio.savemat(f'TrainDataset_hthi_gauss.mat', label_data)
+
+    smooth_test_label = smooth_label(test_data['testLabel'])
+    label_data = {
+        'amp': test_data['testAmp'],
+        'label': test_data['testLabel'],
+        'smooth_label': smooth_test_label
+    }
+    scio.savemat(f'TestDataset_hthi_gauss.mat', label_data)
