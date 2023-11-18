@@ -15,7 +15,7 @@ import random
 
 
 from functions import start_end_gaussian
-from config import in_channel, unet_depth, unetpp_depth, num_class, segment_class
+from Config import in_channel, unet_depth, unetpp_depth, num_class, segment_class
 
 
 def get_args():

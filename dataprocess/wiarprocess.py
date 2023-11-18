@@ -16,7 +16,7 @@ class DataSource:
 
     def _load_data(self):
         data = scio.loadmat(self.filename)
-        self.amps = data['trainAmp'].astype(np.float32)
+        self.amps = data['trainAmp'].transpose(0, 2, 1).astype(np.float32)
         self.labels = data['trainLabel'].astype(np.float32)
         self.salient_labels = data['trainSalientLabel'].astype(np.float32)
         self.segment_labels = data['trainSegmentLabel'].astype(np.float32)
@@ -34,7 +34,7 @@ class DataSourceTest:
     
     def _load_data(self):
         data = scio.loadmat(self.filename)
-        self.amps = data['testAmp'].astype(np.float32)
+        self.amps = data['testAmp'].transpose(0, 2, 1).astype(np.float32)
         self.labels = data['testLabel'].astype(np.float32)
         self.salient_labels = data['testSalientLabel'].astype(np.float32)
         self.segment_labels = data['testSegmentLabel'].astype(np.float32)
@@ -57,7 +57,7 @@ class WiARData(data.Dataset):
     
     def __getitem__(self, index):
         self.__amp = self.amps[index]
-        self.__label = self.labels[index]
+        self.__label = self.labels[0][index].reshape(1,1)
         self.__salient_label = self.salient_labels[index]
         self.__segment_label = self.segment_labels[index]
         return self.__amp, self.__label, self.__salient_label, self.__segment_label
