@@ -37,6 +37,10 @@ python train_eval.py --model_name <model_name> --task <task> --dataset_name <dat
 
 Please note that when the `dataset_name` is set to `HTHI`, the `task` parameter can only be set to `detection`.
 
+## gaussian smooth label
+
+`run gaussian_smooth_label.py `
+
 
 ## Citation
 If this helps your research, please cite our [paper](https://ieeexplore.ieee.org/document/10286020).

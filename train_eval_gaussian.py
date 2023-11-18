@@ -15,28 +15,32 @@ import random
 
 
 from functions import start_end_gaussian
-from Config import in_channel, unet_depth, unetpp_depth, num_class, segment_class
+from Config import Config
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', type=str)
-    parser.add_argument('--device_id', type=int, default=2)
-    parser.add_argument('--epoches', type=int, default=1000)
-    parser.add_argument('--batch_size', type=int, default=10,
+    parser.add_argument('--model_name', type=str, default='fcn',
+                        help='{unet} / {unetpp} / {fcn}')
+    parser.add_argument('--device_id', type=int, default=0)
+    parser.add_argument('--epoches', type=int, default=100)
+    parser.add_argument('--batch_size', type=int, default=16,
                         help='training batch size')
-    parser.add_argument('--lr', type=float, default=5e-4,
+    parser.add_argument('--lr', type=float, default=5e-5,
                         help='learning rate')
     parser.add_argument('--decay_epoch', type=list, default=[],
                         help='every n epochs decay learning rate')
-    parser.add_argument('--task', type=str, default='classify',
-                        help='choose target of this task')
-    parser.add_argument('--dataset_name', type=str, default=['ARIL'])
-    parser.add_argument('--train_dataset_path', type=str,
+    parser.add_argument('--task', type=str, default='detection',
+                        help='choose target of this task: {classify} / {detection} / {segment}')
+
+    parser.add_argument('--dataset_name', type=str, default='ARIL',
+                        help='{HTHI} / {WiAR} / {ARIL}')
+    parser.add_argument('--train_dataset_path', type=str, default='process_label/TrainDataset_aril_gauss.mat',
                         help='train dataset path')
-    parser.add_argument('--test_dataset_path', type=str,
+    parser.add_argument('--test_dataset_path', type=str, default='process_label/TestDataset_aril_gauss.mat',
                         help='test dataset path')
-    parser.add_argument('--index', type=int)
+
+    parser.add_argument('--index', type=int, default=0)
     parser.add_argument('--detection_gaussian', type=str, default="Yes")
     args = parser.parse_args()
 
@@ -70,14 +74,17 @@ task = args.task
 detection_gaussian = args.detection_gaussian
 filename = args.train_dataset_path
 testfilename = args.test_dataset_path
-sample_rate = None
 
-if args.dataset_name == 'ARIL':
-    sample_rate = 60
-elif args.dataset_name == 'WiAR':
-    sample_rate = 100
-else:
-    sample_rate = 160
+
+config = Config(dataset_name=args.dataset_name)
+# sample_rate = None
+#
+# if args.dataset_name == 'ARIL':
+#     sample_rate = 60
+# elif args.dataset_name == 'WiAR':
+#     sample_rate = 100
+# else:
+#     sample_rate = 160
 
 
 def model_opt_lossfn(model_name, lr, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian):
@@ -95,7 +102,7 @@ testdataset = getdataloader(dataset_name=args.dataset_name, filepath=testfilenam
                             shuffle=False)
 
 # model, optimizer, loss_function
-model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, in_channel, num_class, segment_class, unet_depth, unetpp_depth, task, detection_gaussian=detection_gaussian)
+model, optimizer, loss_fn = model_opt_lossfn(model_name, lr, config.in_channel, config.num_class, config.segment_class, config.unet_depth, config.unetpp_depth, task, detection_gaussian=detection_gaussian)
 
 # training, testing/evaluating
 
@@ -179,7 +186,7 @@ for _ in range(epoches):
         out = out.data.cpu().numpy()
         gt = detection_label.data.cpu().numpy()
 
-        error_start, error_end = start_end_gaussian(out, gt, sample_rate)
+        error_start, error_end = start_end_gaussian(out, gt, config.sample_rate)
         start_errors.append(error_start)
         end_errors.append(error_end)
 
